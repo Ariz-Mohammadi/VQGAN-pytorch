@@ -14,10 +14,17 @@ import matplotlib.pyplot as plt
 class ImagePaths(Dataset):
     def __init__(self, path, size=None):
         self.size = size
-
-        self.images = [os.path.join(path, file) for file in os.listdir(path)]
+        self.images = []
+        
+        # Recursively find all image files in the dataset directory
+        for root, _, files in os.walk(path):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')):
+                    self.images.append(os.path.join(root, file))
+        
         self._length = len(self.images)
-
+        
+        # Define transformations: resize and crop
         self.rescaler = albumentations.SmallestMaxSize(max_size=self.size)
         self.cropper = albumentations.CenterCrop(height=self.size, width=self.size)
         self.preprocessor = albumentations.Compose([self.rescaler, self.cropper])
@@ -26,38 +33,30 @@ class ImagePaths(Dataset):
         return self._length
 
     def preprocess_image(self, image_path):
-        #weeeeeeeeeeeeeeeeeeee
         image = Image.open(image_path)
+        if image.mode != "RGB":
+            image = image.convert("RGB")  # Convert grayscale to RGB if necessary
         
-        # Ensure the image is grayscale
-        if image.mode != "L":
-            raise ValueError("Expected grayscale images with single or repeated channels.")
-        
-        # Convert to numpy array
+        # Convert image to numpy array
         image = np.array(image).astype(np.uint8)
         
-        # If your model requires 3 channels, repeat the grayscale channel 3 times
-        if len(image.shape) == 2:  # Single-channel grayscale
-            image = np.stack([image] * 3, axis=-1)  # Duplicate to create 3 channels
-        
-        # Apply preprocessing (resize and crop)
+        # Apply Albumentations preprocessing
         image = self.preprocessor(image=image)["image"]
         
-        # Normalize and rearrange dimensions for PyTorch
+        # Normalize and rearrange channels for PyTorch
         image = (image / 127.5 - 1.0).astype(np.float32)
-        image = image.transpose(2, 0, 1)  # Convert to [C, H, W] for PyTorch
+        image = image.transpose(2, 0, 1)  # Change to [C, H, W]
         return image
 
+    def __getitem__(self, index):
+        image_path = self.images[index]
+        image = self.preprocess_image(image_path)
+        return image
 
-    def __getitem__(self, i):
-        example = self.preprocess_image(self.images[i])
-        return example
-    
-    
-def load_data(args):
-    train_data = ImagePaths(args.dataset_path, size=256)
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=False)
-    return train_loader
+def load_data(dataset_path, batch_size, size=256):
+    dataset = ImagePaths(dataset_path, size=size)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    return data_loader
 
 
 # --------------------------------------------- #
