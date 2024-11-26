@@ -34,28 +34,13 @@ class ImagePaths(Dataset):
 
     def preprocess_image(self, image_path):
         image = Image.open(image_path)
-        
-        # Ensure the image is in grayscale mode
-        if image.mode != "L":
-            raise ValueError(f"Expected grayscale image but got {image.mode}.")
-        
-        # Convert to numpy array (grayscale, single-channel)
-        image = np.array(image).astype(np.uint8)  # Shape [H, W]
-        
-        # Add a channel dimension for preprocessing ([H, W] -> [H, W, 1])
-        image = image[:, :, None]
-        
-        # Apply Albumentations preprocessing
-        image = self.preprocessor(image=image)["image"]  # Shape [H, W, 1] -> [H, W, 1]
-        
-        # Remove the extra channel dimension ([H, W, 1] -> [H, W])
-        image = np.squeeze(image, axis=-1)
-        
-        # Normalize and add channel dimension for PyTorch ([H, W] -> [1, H, W])
-        image = (image / 127.5 - 1.0).astype(np.float32)  # Normalize to [-1, 1]
-        image = image[None, :, :]  # Add channel dimension
+        if not image.mode == "RGB":
+            image = image.convert("RGB")
+        image = np.array(image).astype(np.uint8)
+        image = self.preprocessor(image=image)["image"]
+        image = (image / 127.5 - 1.0).astype(np.float32)
+        image = image.transpose(2, 0, 1)
         return image
-
 
     def __getitem__(self, index):
         image_path = self.images[index]
