@@ -39,17 +39,23 @@ class ImagePaths(Dataset):
         if image.mode != "L":
             raise ValueError(f"Expected grayscale image but got {image.mode}.")
         
-        # Convert image to numpy array
-        image = np.array(image).astype(np.uint8)  # Grayscale, single-channel
+        # Convert to numpy array (grayscale, single-channel)
+        image = np.array(image).astype(np.uint8)  # Shape [H, W]
+        
+        # Add a channel dimension for preprocessing ([H, W] -> [H, W, 1])
+        image = image[:, :, None]
         
         # Apply Albumentations preprocessing
-        # Albumentations expects a 3D input [H, W, C], so expand dims for processing
-        image = self.preprocessor(image=image[:, :, None])["image"]  # Add channel dimension
+        image = self.preprocessor(image=image)["image"]  # Shape [H, W, 1] -> [H, W, 1]
         
-        # Normalize and rearrange dimensions for PyTorch
+        # Remove the extra channel dimension ([H, W, 1] -> [H, W])
+        image = np.squeeze(image, axis=-1)
+        
+        # Normalize and add channel dimension for PyTorch ([H, W] -> [1, H, W])
         image = (image / 127.5 - 1.0).astype(np.float32)  # Normalize to [-1, 1]
-        image = image[None, :, :]  # Add channel dimension to make [1, H, W]
+        image = image[None, :, :]  # Add channel dimension
         return image
+
 
     def __getitem__(self, index):
         image_path = self.images[index]
