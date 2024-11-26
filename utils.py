@@ -26,6 +26,7 @@ class ImagePaths(Dataset):
         return self._length
 
     def preprocess_image(self, image_path):
+        #weeeeeeeeeeeeeeeeeeee
         image = Image.open(image_path)
         
         # Ensure the image is grayscale
@@ -51,8 +52,8 @@ class ImagePaths(Dataset):
     def __getitem__(self, i):
         example = self.preprocess_image(self.images[i])
         return example
-
-
+    
+    
 def load_data(args):
     train_data = ImagePaths(args.dataset_path, size=256)
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=False)
