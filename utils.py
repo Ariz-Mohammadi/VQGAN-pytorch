@@ -34,18 +34,21 @@ class ImagePaths(Dataset):
 
     def preprocess_image(self, image_path):
         image = Image.open(image_path)
-        if image.mode != "RGB":
-            image = image.convert("RGB")  # Convert grayscale to RGB if necessary
+        
+        # Ensure the image is in grayscale mode
+        if image.mode != "L":
+            raise ValueError(f"Expected grayscale image but got {image.mode}.")
         
         # Convert image to numpy array
-        image = np.array(image).astype(np.uint8)
+        image = np.array(image).astype(np.uint8)  # Grayscale, single-channel
         
         # Apply Albumentations preprocessing
-        image = self.preprocessor(image=image)["image"]
+        # Albumentations expects a 3D input [H, W, C], so expand dims for processing
+        image = self.preprocessor(image=image[:, :, None])["image"]  # Add channel dimension
         
-        # Normalize and rearrange channels for PyTorch
-        image = (image / 127.5 - 1.0).astype(np.float32)
-        image = image.transpose(2, 0, 1)  # Change to [C, H, W]
+        # Normalize and rearrange dimensions for PyTorch
+        image = (image / 127.5 - 1.0).astype(np.float32)  # Normalize to [-1, 1]
+        image = image[None, :, :]  # Add channel dimension to make [1, H, W]
         return image
 
     def __getitem__(self, index):
@@ -53,10 +56,10 @@ class ImagePaths(Dataset):
         image = self.preprocess_image(image_path)
         return image
 
-def load_data(dataset_path, batch_size, size=256):
-    dataset = ImagePaths(dataset_path, size=size)
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    return data_loader
+def load_data(args):
+    train_data = ImagePaths(args.dataset_path, size=256)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=False)
+    return train_loader
 
 
 # --------------------------------------------- #
