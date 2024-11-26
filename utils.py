@@ -26,14 +26,27 @@ class ImagePaths(Dataset):
         return self._length
 
     def preprocess_image(self, image_path):
-        image = Image.open(image_path)
-        if not image.mode == "RGB":
-            image = image.convert("RGB")
-        image = np.array(image).astype(np.uint8)
-        image = self.preprocessor(image=image)["image"]
-        image = (image / 127.5 - 1.0).astype(np.float32)
-        image = image.transpose(2, 0, 1)
-        return image
+    image = Image.open(image_path)
+    
+    # Ensure the image is grayscale
+    if image.mode != "L":
+        raise ValueError("Expected grayscale images with single or repeated channels.")
+    
+    # Convert to numpy array
+    image = np.array(image).astype(np.uint8)
+    
+    # If your model requires 3 channels, repeat the grayscale channel 3 times
+    if len(image.shape) == 2:  # Single-channel grayscale
+        image = np.stack([image] * 3, axis=-1)  # Duplicate to create 3 channels
+    
+    # Apply preprocessing (resize and crop)
+    image = self.preprocessor(image=image)["image"]
+    
+    # Normalize and rearrange dimensions for PyTorch
+    image = (image / 127.5 - 1.0).astype(np.float32)
+    image = image.transpose(2, 0, 1)  # Convert to [C, H, W] for PyTorch
+    return image
+
 
     def __getitem__(self, i):
         example = self.preprocess_image(self.images[i])
