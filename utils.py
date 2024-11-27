@@ -32,16 +32,24 @@ class ImagePaths(Dataset):
     def __len__(self):
         return self._length
 
+    # def preprocess_image(self, image_path):
+    #     image = Image.open(image_path)
+    #     if not image.mode == "RGB":
+    #         image = image.convert("RGB")
+    #     image = np.array(image).astype(np.uint8)
+    #     image = self.preprocessor(image=image)["image"]
+    #     image = (image / 127.5 - 1.0).astype(np.float32)
+    #     image = image.transpose(2, 0, 1)
+    #     return image
     def preprocess_image(self, image_path):
         image = Image.open(image_path)
-        if not image.mode == "RGB":
-            image = image.convert("RGB")
+        if not image.mode == "L":  # Convert to grayscale
+            image = image.convert("L")
         image = np.array(image).astype(np.uint8)
         image = self.preprocessor(image=image)["image"]
         image = (image / 127.5 - 1.0).astype(np.float32)
-        image = image.transpose(2, 0, 1)
+        image = np.expand_dims(image, axis=0)  # Add channel dimension for grayscale
         return image
-
     def __getitem__(self, index):
         image_path = self.images[index]
         image = self.preprocess_image(image_path)
