@@ -29,7 +29,8 @@ class Decoder(nn.Module):
 
         layers.append(GroupNorm(in_channels))
         layers.append(Swish())
-        layers.append(nn.Conv2d(in_channels, args.image_channels, 3, 1, 1))
+        layers.append(nn.Conv2d(in_channels, 1, 3, 1, 1))
+        #layers.append(nn.Conv2d(in_channels, args.image_channels, 3, 1, 1))
         self.model = nn.Sequential(*layers)
 
     def forward(self, x):
