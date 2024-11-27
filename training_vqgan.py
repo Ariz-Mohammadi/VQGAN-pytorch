@@ -98,6 +98,7 @@ if __name__ == '__main__':
     parser.add_argument('--image-size', type=int, default=256, help='Image height and width (default: 256)')
     parser.add_argument('--num-codebook-vectors', type=int, default=1024, help='Number of codebook vectors (default: 256)')
     parser.add_argument('--beta', type=float, default=0.25, help='Commitment loss scalar (default: 0.25)')
+    #parser.add_argument('--image-channels', type=int, default=3, help='Number of channels of images (default: 3)')inja taqirdadam
     parser.add_argument('--image-channels', type=int, default=3, help='Number of channels of images (default: 3)')
     parser.add_argument('--dataset-path', type=str, default='/data', help='Path to data (default: /data)')
     parser.add_argument('--device', type=str, default="cuda", help='Which device the training is on')
